@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.core.env.Environment;
 import org.springframework.security.oauth2.client.DefaultOAuth2ClientContext;
+import org.springframework.security.oauth2.client.OAuth2ClientContext;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails;
 import org.springframework.security.oauth2.client.token.AccessTokenRequest;
@@ -27,12 +28,9 @@ class OAuth2SecurityConfiguration {
     @Autowired
     private Environment env;
 
-    @Resource
-    @Qualifier("accessTokenRequest")
-    private AccessTokenRequest accessTokenRequest;
 
     @Bean
-    @Scope("session")
+    @Scope("request")
     public OAuth2ProtectedResourceDetails googleResource() {
         AuthorizationCodeResourceDetails details = new AuthorizationCodeResourceDetails();
         details.setId("google-oauth-client");
@@ -56,9 +54,13 @@ class OAuth2SecurityConfiguration {
         return scopes;
     }
 
+    @SuppressWarnings("SpringJavaAutowiringInspection") // Provided by Spring Boot
+    @Resource
+    private OAuth2ClientContext oAuth2ClientContext;
+
     @Bean
-    @Scope(value = "session", proxyMode = ScopedProxyMode.INTERFACES)
+    @Scope(value = "request", proxyMode = ScopedProxyMode.INTERFACES)
     public OAuth2RestTemplate googleRestTemplate() {
-        return new OAuth2RestTemplate(googleResource(), new DefaultOAuth2ClientContext(accessTokenRequest));
+        return new OAuth2RestTemplate(googleResource(), oAuth2ClientContext);
     }
 }
